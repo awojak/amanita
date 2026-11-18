@@ -9,3 +9,7 @@ publish.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Open-source gaming mouse management software for Linux"
+
+[dependencies]
+hidapi = { version = "2.6.7", default-features = false, features = ["linux-native-basic-udev"] }
+thiserror = "2.0.21"
