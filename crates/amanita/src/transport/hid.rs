@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Adrian Wojak <adrian.wojak@outlook.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use std::{collections::HashSet, ffi::CString, str::Utf8Error};
+mod descriptor;
+
+use std::{collections::HashSet, ffi::CString, fs, path::Path, str::Utf8Error};
 
 use hidapi::{HidApi, HidDevice, HidError as HidApiError};
 use thiserror::Error;
@@ -19,7 +21,8 @@ pub enum HidError {
     HidApi(#[from] HidApiError),
 }
 
-/// Represents a HID device endpoint.
+/// A HID endpoint identified by its path.
+#[derive(Clone)]
 pub struct HidEndpoint {
     pub path: CString,
     pub vendor_id: u16,
@@ -27,7 +30,26 @@ pub struct HidEndpoint {
     pub serial_number: Option<String>,
 }
 
-/// Manages HID device.
+impl HidEndpoint {
+    /// Checks the Linux HID descriptor for a feature report with the given payload size.
+    /// The payload size excludes the report ID byte.
+    pub fn has_feature_report(&self, report_id: u8, payload_size: usize) -> bool {
+        let Ok(path) = self.path.to_str() else {
+            return false;
+        };
+        let Some(hidraw_name) = Path::new(path).file_name() else {
+            return false;
+        };
+        let descriptor_path = Path::new("/sys/class/hidraw")
+            .join(hidraw_name)
+            .join("device/report_descriptor");
+        fs::read(descriptor_path).is_ok_and(|bytes| {
+            descriptor::feature_report_payload_size(&bytes, report_id) == Some(payload_size)
+        })
+    }
+}
+
+/// Enumerates and opens HID endpoints.
 pub struct HidBackend {
     api: HidApi,
 }
@@ -44,15 +66,15 @@ impl HidBackend {
         })
     }
 
-    /// Enumerates HID devices.
+    /// Enumerates HID endpoints.
     ///
-    /// Refreshes the device list and returns one endpoint per unique
-    /// HID path. Devices with identical vendor IDs, product IDs, or
-    /// serial numbers are preserved if their paths differ.
+    /// Refreshes the endpoint list and returns one entry per unique HID path.
+    /// Endpoints with identical vendor IDs, product IDs, or serial numbers
+    /// are included if their paths differ.
     ///
     /// # Errors
     ///
-    /// Returns an error if refreshing the HID device list fails.
+    /// Returns an error if refreshing the endpoint list fails.
     pub fn enumerate(&mut self) -> Result<Vec<HidEndpoint>, HidError> {
         self.api.refresh_devices()?;
 
@@ -72,7 +94,7 @@ impl HidBackend {
         Ok(endpoints)
     }
 
-    /// Opens the device.
+    /// Opens a HID endpoint.
     ///
     /// # Arguments
     ///
@@ -90,7 +112,7 @@ impl HidBackend {
     }
 }
 
-/// A handle to an open HID device.
+/// A handle to an open HID endpoint.
 ///
 /// The handle is automatically closed when the connection is dropped.
 #[derive(Debug)]
