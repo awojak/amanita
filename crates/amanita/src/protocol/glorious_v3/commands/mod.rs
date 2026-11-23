@@ -7,7 +7,9 @@
 //! The value type selects the command for [`GloriousV3::write`](super::protocol::GloriousV3::write).
 
 mod battery;
+mod dpi;
 mod status;
 
 pub use battery::{Battery, BatteryInfo, BatteryStatus};
+pub use dpi::DpiStage;
 pub(super) use status::{CommandStatus, LastCommandStatus};
