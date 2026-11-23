@@ -1,7 +1,9 @@
 // SPDX-FileCopyrightText: 2026 Adrian Wojak <adrian.wojak@outlook.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-use std::{collections::HashSet, ffi::CString, str::Utf8Error};
+mod descriptor;
+
+use std::{collections::HashSet, ffi::CString, fs, path::Path, str::Utf8Error};
 
 use hidapi::{HidApi, HidDevice, HidError as HidApiError};
 use thiserror::Error;
@@ -24,11 +26,31 @@ pub enum HidError {
 }
 
 /// A HID endpoint identified by its path.
+#[derive(Clone)]
 pub struct HidEndpoint {
     pub path: CString,
     pub vendor_id: u16,
     pub product_id: u16,
     pub serial_number: Option<String>,
+}
+
+impl HidEndpoint {
+    /// Checks the Linux HID descriptor for a feature report with the given payload size.
+    /// The payload size excludes the report ID byte.
+    pub fn has_feature_report(&self, report_id: u8, payload_size: usize) -> bool {
+        let Ok(path) = self.path.to_str() else {
+            return false;
+        };
+        let Some(hidraw_name) = Path::new(path).file_name() else {
+            return false;
+        };
+        let descriptor_path = Path::new("/sys/class/hidraw")
+            .join(hidraw_name)
+            .join("device/report_descriptor");
+        fs::read(descriptor_path).is_ok_and(|bytes| {
+            descriptor::feature_report_payload_size(&bytes, report_id) == Some(payload_size)
+        })
+    }
 }
 
 /// Enumerates and opens HID endpoints.
