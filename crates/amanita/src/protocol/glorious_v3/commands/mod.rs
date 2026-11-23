@@ -11,6 +11,8 @@
 //! [`GloriousV3::read`]: super::protocol::GloriousV3::read
 //! [`GloriousV3::write`]: super::protocol::GloriousV3::write
 
+pub mod battery;
 pub mod status;
 
+pub use battery::BatteryInfo;
 pub use status::CommandStatus;
