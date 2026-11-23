@@ -12,7 +12,9 @@
 //! [`GloriousV3::write`]: super::protocol::GloriousV3::write
 
 pub mod battery;
+mod dpi;
 pub mod status;
 
 pub use battery::BatteryInfo;
+pub use dpi::DpiStage;
 pub use status::CommandStatus;
