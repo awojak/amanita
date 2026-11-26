@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2026 Adrian Wojak <adrian.wojak@outlook.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[toolchain]
+channel = "1.100.0"
+profile = "minimal"
+components = ["rustfmt", "clippy", "rust-analyzer", "rust-src"]
+targets = ["x86_64-unknown-linux-musl"]

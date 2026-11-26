@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Adrian Wojak <adrian.wojak@outlook.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+[package]
+name = "amanita"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Open-source gaming mouse management software for Linux"

@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2026 Adrian Wojak <adrian.wojak@outlook.com>
+# SPDX-License-Identifier: GPL-3.0-or-later
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: CI (x86_64-linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: prepare / install Nix
+        uses: cachix/install-nix-action@3dc140bfc76c49fbd4dd958429132e3746bcb086 # v31.11.5
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: prepare / load environment
+        run: nix develop --no-update-lock-file -c true
+
+      - name: check
+        run: nix develop --no-update-lock-file -c make check
+
+      - name: unit test
+        run: nix develop --no-update-lock-file -c make test
+
+      - name: build
+        run: nix develop --no-update-lock-file -c make build-release
+
+      - name: smoke test
+        run: |
+          smoke_root=$(mktemp -d)
+          cp output/target/x86_64-unknown-linux-musl/release/amanita "$smoke_root/amanita"
+          sudo timeout --kill-after=1s 5s chroot "$smoke_root" /amanita
+
+      - name: package
+        run: nix develop --no-update-lock-file -c make package
+
+      - name: deploy
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: amanita-x86_64-linux
+          path: output/dist/
+          if-no-files-found: error
+          retention-days: 1
