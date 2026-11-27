@@ -57,6 +57,16 @@ impl GloriousReadCommand for ReadWriteCommand {
 }
 
 impl GloriousWriteCommand for ReadWriteCommand {
+    fn build(args: &[String]) -> Result<Self, Box<dyn std::error::Error>> {
+        let [value] = args else {
+            return Err("expected exactly one value".into());
+        };
+
+        Ok(Self {
+            value: value.parse()?,
+        })
+    }
+
     fn encode(self) -> impl AsRef<[u8]> {
         [self.value]
     }

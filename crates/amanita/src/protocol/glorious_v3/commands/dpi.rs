@@ -38,6 +38,19 @@ impl GloriousReadCommand for DpiStage {
 }
 
 impl GloriousWriteCommand for DpiStage {
+    fn build(args: &[String]) -> Result<Self, Box<dyn std::error::Error>> {
+        const EXPECTED_ARGUMENT: &str = "expected argument <stage> as a DPI stage number";
+
+        let [stage] = args else {
+            return Err(EXPECTED_ARGUMENT.into());
+        };
+
+        let stage = stage
+            .parse()
+            .map_err(|error| format!("{EXPECTED_ARGUMENT}. {error}"))?;
+        Ok(Self { stage })
+    }
+
     fn encode(self) -> impl AsRef<[u8]> {
         [self.stage]
     }

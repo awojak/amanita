@@ -35,9 +35,8 @@ fn get_cmd<T: GloriousReadCommand<Request = ()> + Debug>(
 fn set_cmd<T: GloriousWriteCommand>(
     protocol: &mut GloriousV3,
     args: &[String],
-    parse: impl FnOnce(&[String]) -> Result<T, Box<dyn Error>>,
 ) -> Result<(), Box<dyn Error>> {
-    let command = parse(args)?;
+    let command = T::build(args)?;
     protocol.write(command, None)?;
     println!("Command succeeded");
     Ok(())
@@ -49,7 +48,7 @@ fn find_command_handler(operation: &str, command: &str) -> Result<Handler, Box<d
     let commands: &[(&str, &str, Handler)] = &[
         ("get", "dpi_stage", get_cmd::<DpiStage>),
         ("get", "battery_info", get_cmd::<BatteryInfo>),
-        ("set", "dpi_stage", set_dpi_stage),
+        ("set", "dpi_stage", set_cmd::<DpiStage>),
     ];
 
     let Some(handler) = commands
@@ -83,22 +82,4 @@ fn main() -> Result<(), Box<dyn Error>> {
     command_handler(&mut protocol, command_args.as_slice())?;
 
     Ok(())
-}
-
-fn parse_dpi_stage(args: &[String]) -> Result<DpiStage, Box<dyn Error>> {
-    const EXPECTED_ARGUMENT: &str =
-        "expected one argument <stage> as a decimal DPI stage number (e.g. 3)";
-
-    let [stage] = args else {
-        return Err(EXPECTED_ARGUMENT.into());
-    };
-
-    let stage = stage
-        .parse()
-        .map_err(|error| format!("{EXPECTED_ARGUMENT}. {error}"))?;
-    Ok(DpiStage { stage })
-}
-
-fn set_dpi_stage(protocol: &mut GloriousV3, args: &[String]) -> Result<(), Box<dyn Error>> {
-    set_cmd(protocol, args, parse_dpi_stage)
 }

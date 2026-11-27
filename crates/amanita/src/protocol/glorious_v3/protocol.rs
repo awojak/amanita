@@ -60,6 +60,12 @@ pub trait GloriousReadCommand: GloriousCommand {
 
 /// A command that supports SET.
 pub trait GloriousWriteCommand: GloriousCommand {
+    /// Builds a command from its arguments.
+    ///
+    /// # Errors
+    /// Returns an error if the arguments are invalid for this command.
+    fn build(args: &[String]) -> Result<Self, Box<dyn std::error::Error>>;
+
     /// Encodes the SET payload.
     fn encode(self) -> impl AsRef<[u8]>;
 }
