@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 use std::error::Error;
-use std::fmt::Debug;
+use std::fmt::Display;
 
 use amanita::protocol::glorious_v3::commands::{BatteryInfo, DpiStage};
 use amanita::protocol::glorious_v3::protocol::{
@@ -19,7 +19,7 @@ fn find_endpoint(backend: &mut HidBackend, path: &str) -> Result<HidEndpoint, Bo
         .ok_or_else(|| format!("HID path {path} not found").into())
 }
 
-fn get_cmd<T: GloriousReadCommand<Request = ()> + Debug>(
+fn get_cmd<T: GloriousReadCommand<Request = ()> + Display>(
     protocol: &mut GloriousV3,
     arguments: &[String],
 ) -> Result<(), Box<dyn Error>> {
@@ -28,17 +28,18 @@ fn get_cmd<T: GloriousReadCommand<Request = ()> + Debug>(
     }
 
     let response = protocol.read::<T>((), None)?;
-    println!("{response:?}");
+    println!("{response}");
     Ok(())
 }
 
-fn set_cmd<T: GloriousWriteCommand>(
+fn set_cmd<T: GloriousWriteCommand + Display>(
     protocol: &mut GloriousV3,
     args: &[String],
 ) -> Result<(), Box<dyn Error>> {
     let command = T::build(args)?;
+    let description = command.to_string();
     protocol.write(command, None)?;
-    println!("Command succeeded");
+    println!("Set {description}");
     Ok(())
 }
 

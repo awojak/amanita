@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Adrian Wojak <adrian.wojak@outlook.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use std::fmt;
+
 use super::super::protocol::{GloriousCommand, GloriousError, GloriousReadCommand};
 
 #[cfg(test)]
@@ -22,6 +24,18 @@ pub enum BatteryStatus {
     Unknown(u8),
 }
 
+impl fmt::Display for BatteryStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Missing => f.write_str("missing"),
+            Self::Charging => f.write_str("charging"),
+            Self::Discharging => f.write_str("discharging"),
+            Self::Charged => f.write_str("charged"),
+            Self::Unknown(code) => write!(f, "unknown status ({code:#04x})"),
+        }
+    }
+}
+
 /// Status, charge level, and voltage for one battery.
 ///
 /// The charge level and voltage are undefined when the status is [`BatteryStatus::Missing`].
@@ -30,6 +44,16 @@ pub struct BatteryReading {
     pub status: BatteryStatus,
     pub level_percent: u8,
     pub voltage_mv: u16,
+}
+
+impl fmt::Display for BatteryReading {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if matches!(self.status, BatteryStatus::Missing) {
+            return write!(f, "{}", self.status);
+        }
+
+        write!(f, "{}, {}%, {} mV", self.status, self.level_percent, self.voltage_mv)
+    }
 }
 
 impl BatteryReading {
@@ -57,6 +81,12 @@ impl BatteryReading {
 pub struct BatteryInfo {
     pub main: BatteryReading,
     pub backup: BatteryReading,
+}
+
+impl fmt::Display for BatteryInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Main battery {}\nBackup battery {}", self.main, self.backup)
+    }
 }
 
 impl BatteryInfo {

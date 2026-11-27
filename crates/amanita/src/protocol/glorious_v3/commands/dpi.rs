@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Adrian Wojak <adrian.wojak@outlook.com>
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+use std::fmt;
+
 use super::super::protocol::{
     GloriousCommand, GloriousError, GloriousReadCommand, GloriousWriteCommand,
 };
@@ -13,6 +15,12 @@ mod tests;
 #[derive(Debug)]
 pub struct DpiStage {
     pub stage: u8,
+}
+
+impl fmt::Display for DpiStage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "DPI stage {}", self.stage)
+    }
 }
 
 impl GloriousCommand for DpiStage {
